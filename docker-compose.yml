@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------
+  # Service 1: API Gateway (Nginx Reverse Proxy) - Dockerfile #1
+  # ---------------------------------------------------------
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: ecommerce-api-gateway
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      frontend:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:80/health || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+  # ---------------------------------------------------------
+  # Service 2: Frontend Web Application - Dockerfile #2
+  # ---------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ecommerce-frontend
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:80/health || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+  # ---------------------------------------------------------
+  # Service 3: Auth Microservice (Node.js) - Dockerfile #3
+  # ---------------------------------------------------------
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-auth-service
+    restart: always
+    environment:
+      - PORT=5001
+      - JWT_SECRET=production-super-secret-key-2026
+    expose:
+      - "5001"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+  # ---------------------------------------------------------
+  # Service 4: Product Catalog Microservice (FastAPI) - Dockerfile #4
+  # ---------------------------------------------------------
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-product-service
+    restart: always
+    environment:
+      - PORT=5002
+    expose:
+      - "5002"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+  # ---------------------------------------------------------
+  # Service 5: Order Processing Microservice - Dockerfile #5
+  # ---------------------------------------------------------
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-order-service
+    restart: always
+    environment:
+      - PORT=5003
+    expose:
+      - "5003"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+# ---------------------------------------------------------
+# Isolated Internal Bridge Network
+# ---------------------------------------------------------
+networks:
+  ecommerce-network:
+    driver: bridge
