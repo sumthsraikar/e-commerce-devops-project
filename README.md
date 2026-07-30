@@ -44,12 +44,23 @@ A production-ready, security-hardened microservices architecture built for scale
 
 ---
 
-## 🚀 Quick Start (Docker Compose)
+## ☁️ Amazon Linux 2023 One-Touch Setup Script
 
-Launch all 5 containers simultaneously with a single command:
+For EC2 instances running **Amazon Linux 2023 (AL2023)**, run the automated setup script to install all dependencies (Docker, Docker Compose V2, Node.js, Python 3.11, Git, etc.):
 
 ```bash
-docker compose up --build
+chmod +x setup-amazon-linux-2023.sh
+sudo ./setup-amazon-linux-2023.sh
+```
+
+---
+
+## 🚀 Quick Start (Docker Compose)
+
+Launch all 5 containers simultaneously:
+
+```bash
+docker compose up --build -d
 ```
 
 Access the application components:
