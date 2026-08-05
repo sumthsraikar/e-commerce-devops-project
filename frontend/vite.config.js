@@ -5,6 +5,23 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    host: true
+    host: true,
+    proxy: {
+      '/api/v1/auth': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/v1\/auth/, '')
+      },
+      '/api/v1/products': {
+        target: 'http://localhost:5002',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/v1\/products/, '')
+      },
+      '/api/v1/orders': {
+        target: 'http://localhost:5003',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/v1\/orders/, '')
+      }
+    }
   }
 })
