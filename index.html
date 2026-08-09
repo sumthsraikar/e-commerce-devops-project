@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flipkart - Online Shopping Site for Mobiles, Electronics, Fashion & More</title>
+  <meta name="description" content="Shop online at Flipkart for Mobiles, Laptops, Headphones, Smart TVs, Fashion, Appliances and get the best deals, discounts and fast delivery.">
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Flipkart Header -->
+  <header class="fk-header">
+    <div class="fk-nav-container">
+      <!-- Logo -->
+      <a href="#" class="fk-logo" onclick="resetFilters()">
+        <div class="fk-logo-text">Flipkart</div>
+        <div class="fk-logo-sub">
+          Explore <span>Plus</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="var(--accent-yellow)"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+      </a>
+
+      <!-- Search Bar -->
+      <div class="fk-search-wrapper">
+        <div class="fk-search-box">
+          <input type="text" id="searchInput" class="fk-search-input" placeholder="Search for products, brands and more" autocomplete="off" />
+          <button class="fk-search-btn" title="Search">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </button>
+        </div>
+        <!-- Search Suggestions Dropdown -->
+        <div id="suggestionsList" class="fk-suggestions-list"></div>
+      </div>
+
+      <!-- Actions Right Nav -->
+      <div class="fk-nav-actions">
+        <button class="fk-login-btn" onclick="openLoginModal()">Login</button>
+        
+        <div class="fk-nav-item" onclick="openWishlistModal()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+          <span>Wishlist</span>
+          <span id="wishCount" class="fk-badge">0</span>
+        </div>
+
+        <div class="fk-nav-item" onclick="openOrdersModal()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8-9-4-9 4-9 4 9 9 4-9-4Z"/><path d="M3 8v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8"/><path d="M12 12v6"/><path d="M12 12h6"/></svg>
+          <span>Orders</span>
+        </div>
+
+        <div class="fk-nav-item" onclick="toggleCartDrawer(true)">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          <span>Cart</span>
+          <span id="cartCount" class="fk-badge">0</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Categories Sub-Header -->
+  <nav class="fk-cat-bar">
+    <div class="fk-cat-container">
+      <div class="fk-cat-item active" data-cat="All" onclick="setCategory('All')">
+        <div class="fk-cat-icon">⚡</div>
+        <div class="fk-cat-title">Top Offers</div>
+      </div>
+      <div class="fk-cat-item" data-cat="Mobiles" onclick="setCategory('Mobiles')">
+        <div class="fk-cat-icon">📱</div>
+        <div class="fk-cat-title">Mobiles</div>
+      </div>
+      <div class="fk-cat-item" data-cat="Electronics" onclick="setCategory('Electronics')">
+        <div class="fk-cat-icon">💻</div>
+        <div class="fk-cat-title">Electronics</div>
+      </div>
+      <div class="fk-cat-item" data-cat="Appliances" onclick="setCategory('Appliances')">
+        <div class="fk-cat-icon">📺</div>
+        <div class="fk-cat-title">TV & Appliances</div>
+      </div>
+      <div class="fk-cat-item" data-cat="Fashion" onclick="setCategory('Fashion')">
+        <div class="fk-cat-icon">👕</div>
+        <div class="fk-cat-title">Fashion</div>
+      </div>
+      <div class="fk-cat-item" data-cat="Audio" onclick="setCategory('Audio')">
+        <div class="fk-cat-icon">🎧</div>
+        <div class="fk-cat-title">Audio & Sound</div>
+      </div>
+      <div class="fk-cat-item" data-cat="Beauty" onclick="setCategory('Beauty')">
+        <div class="fk-cat-icon">✨</div>
+        <div class="fk-cat-title">Beauty & Personal</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="fk-main-container">
+    
+    <!-- Hero Banner Carousel -->
+    <section class="fk-carousel-wrapper">
+      <div id="carouselTrack" class="fk-carousel-slides">
+        <div class="fk-slide">
+          <img src="images/banner1.png" alt="Big Savings Day Banner" />
+        </div>
+        <div class="fk-slide">
+          <img src="images/banner2.png" alt="Fashion Mega Sale Banner" />
+        </div>
+      </div>
+      <button class="fk-carousel-btn prev" onclick="prevSlide()" title="Previous">‹</button>
+      <button class="fk-carousel-btn next" onclick="nextSlide()" title="Next">›</button>
+      <div id="carouselDots" class="fk-carousel-dots"></div>
+    </section>
+
+    <!-- Deals of the Day Section -->
+    <section class="fk-deals-banner">
+      <div class="fk-deals-header">
+        <div class="fk-deals-title-wrap">
+          <h2 class="fk-deals-title">Deals of the Day</h2>
+          <div class="fk-timer">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span id="dealsTimer">05h : 42m : 18s</span> Left
+          </div>
+        </div>
+        <button onclick="setSortBy('discount')" style="background:var(--primary); color:#fff; font-weight:700; padding:8px 16px; border-radius:4px; font-size:13px;">VIEW ALL</button>
+      </div>
+
+      <div id="dealsTrack" class="fk-deals-track"></div>
+    </section>
+
+    <!-- Content Layout: Sidebar + Products Grid -->
+    <div class="fk-content-layout">
+
+      <!-- Left Sidebar Filters -->
+      <aside class="fk-sidebar">
+        <div class="fk-filter-header">
+          <span class="fk-filter-title">Filters</span>
+          <button class="fk-clear-btn" onclick="resetFilters()">CLEAR ALL</button>
+        </div>
+
+        <!-- Price Filter Slider -->
+        <div class="fk-filter-group">
+          <div class="fk-filter-label">Price Range</div>
+          <div class="fk-range-wrap">
+            <input type="range" id="priceRangeSlider" class="fk-range-slider" min="1000" max="150000" step="2000" value="150000" />
+            <div class="fk-range-values">
+              <span>₹1,000</span>
+              <span id="priceRangeVal" style="color:var(--primary);">₹1,50,000</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Brand Filter -->
+        <div class="fk-filter-group">
+          <div class="fk-filter-label">Brand</div>
+          <label class="fk-filter-checkbox"><input type="checkbox" onclick="toggleBrandFilter('Apple')" /> Apple</label>
+          <label class="fk-filter-checkbox"><input type="checkbox" onclick="toggleBrandFilter('Samsung')" /> Samsung</label>
+          <label class="fk-filter-checkbox"><input type="checkbox" onclick="toggleBrandFilter('Sony')" /> Sony</label>
+          <label class="fk-filter-checkbox"><input type="checkbox" onclick="toggleBrandFilter('boAt')" /> boAt</label>
+          <label class="fk-filter-checkbox"><input type="checkbox" onclick="toggleBrandFilter('LG')" /> LG</label>
+          <label class="fk-filter-checkbox"><input type="checkbox" onclick="toggleBrandFilter('ASUS')" /> ASUS</label>
+          <label class="fk-filter-checkbox"><input type="checkbox" onclick="toggleBrandFilter('Nike')" /> Nike</label>
+          <label class="fk-filter-checkbox"><input type="checkbox" onclick="toggleBrandFilter('Philips')" /> Philips</label>
+        </div>
+
+        <!-- Flipkart Assured -->
+        <div class="fk-filter-group">
+          <div class="fk-filter-label">Flipkart Assured</div>
+          <label class="fk-filter-checkbox" style="font-weight:600; color:var(--primary);">
+            <input type="checkbox" onclick="toggleAssuredFilter()" />
+            <img src="https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/fa_62673a.png" style="height:16px; margin-left:4px;" alt="Flipkart Assured" />
+          </label>
+        </div>
+
+        <!-- Rating Filter -->
+        <div class="fk-filter-group" style="border-bottom:none;">
+          <div class="fk-filter-label">Customer Ratings</div>
+          <label class="fk-filter-checkbox"><input type="checkbox" onclick="setMinRating(4.5)" /> 4.5★ & above</label>
+          <label class="fk-filter-checkbox"><input type="checkbox" onclick="setMinRating(4.0)" /> 4.0★ & above</label>
+        </div>
+      </aside>
+
+      <!-- Main Products Display Section -->
+      <section class="fk-products-container">
+        <!-- Sorting Bar -->
+        <div class="fk-sort-bar">
+          <span class="fk-sort-label">Sort By:</span>
+          <span class="fk-sort-opt active" data-sort="relevance" onclick="setSortBy('relevance')">Relevance</span>
+          <span class="fk-sort-opt" data-sort="price-low" onclick="setSortBy('price-low')">Price -- Low to High</span>
+          <span class="fk-sort-opt" data-sort="price-high" onclick="setSortBy('price-high')">Price -- High to Low</span>
+          <span class="fk-sort-opt" data-sort="rating" onclick="setSortBy('rating')">Popularity & Rating</span>
+          <span class="fk-sort-opt" data-sort="discount" onclick="setSortBy('discount')">Discount %</span>
+          <span style="margin-left:auto; font-size:13px; color:var(--text-muted);">Showing <strong id="productCount">0</strong> Products</span>
+        </div>
+
+        <!-- Product Cards Grid -->
+        <div id="productGrid" class="fk-product-grid"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="fk-footer">
+    <div class="fk-footer-grid">
+      <div class="fk-footer-col">
+        <h5>ABOUT</h5>
+        <ul>
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Flipkart Stories</a></li>
+          <li><a href="#">Press</a></li>
+          <li><a href="#">Corporate Information</a></li>
+        </ul>
+      </div>
+      <div class="fk-footer-col">
+        <h5>HELP</h5>
+        <ul>
+          <li><a href="#">Payments</a></li>
+          <li><a href="#">Shipping</a></li>
+          <li><a href="#">Cancellation & Returns</a></li>
+          <li><a href="#">FAQ</a></li>
+          <li><a href="#">Report Infringement</a></li>
+        </ul>
+      </div>
+      <div class="fk-footer-col">
+        <h5>CONSUMER POLICY</h5>
+        <ul>
+          <li><a href="#">Cancellation & Returns</a></li>
+          <li><a href="#">Terms Of Use</a></li>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Sitemap</a></li>
+          <li><a href="#">Grievance Redressal</a></li>
+        </ul>
+      </div>
+      <div class="fk-footer-col">
+        <h5>SOCIAL</h5>
+        <ul>
+          <li><a href="#">Facebook</a></li>
+          <li><a href="#">Twitter</a></li>
+          <li><a href="#">YouTube</a></li>
+          <li><a href="#">Instagram</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="fk-footer-bottom">
+      <div>Become a Seller | Advertise | Gift Cards | Help Center</div>
+      <div>© 2026 Flipkart.com Clone Single Web Application</div>
+    </div>
+  </footer>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="fk-mobile-nav">
+    <div class="fk-mob-nav-item active" onclick="resetFilters()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+      Home
+    </div>
+    <div class="fk-mob-nav-item" onclick="setCategory('Mobiles')">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+      Categories
+    </div>
+    <div class="fk-mob-nav-item" onclick="openWishlistModal()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+      Wishlist
+    </div>
+    <div class="fk-mob-nav-item" onclick="openOrdersModal()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg>
+      Orders
+    </div>
+    <div class="fk-mob-nav-item" onclick="toggleCartDrawer(true)">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+      Cart (<span id="mobCartCount">0</span>)
+    </div>
+  </nav>
+
+  <!-- Product Details Modal -->
+  <div id="productDetailModal" class="fk-modal-overlay">
+    <div class="fk-modal-content">
+      <button class="fk-modal-close" onclick="closeProductModal()">✕</button>
+      <div id="pdModalContent"></div>
+    </div>
+  </div>
+
+  <!-- Cart Drawer -->
+  <div id="cartDrawer" class="fk-drawer">
+    <div class="fk-drawer-header">
+      <div class="fk-drawer-title">Shopping Cart</div>
+      <button onclick="toggleCartDrawer(false)" style="background:none; color:#fff; font-size:20px;">✕</button>
+    </div>
+    <div id="cartDrawerBody" class="fk-drawer-body"></div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div id="checkoutModal" class="fk-modal-overlay">
+    <div class="fk-modal-content">
+      <button class="fk-modal-close" onclick="closeCheckoutModal()">✕</button>
+      <div id="checkoutContent"></div>
+    </div>
+  </div>
+
+  <!-- Order Success Celebration Modal -->
+  <div id="successModal" class="fk-modal-overlay">
+    <div class="fk-modal-content" style="max-width:550px;">
+      <div id="successContent"></div>
+    </div>
+  </div>
+
+  <!-- My Orders Modal -->
+  <div id="ordersModal" class="fk-modal-overlay">
+    <div class="fk-modal-content">
+      <button class="fk-modal-close" onclick="closeOrdersModal()">✕</button>
+      <div id="ordersContent"></div>
+    </div>
+  </div>
+
+  <!-- Wishlist Modal -->
+  <div id="wishlistModal" class="fk-modal-overlay">
+    <div class="fk-modal-content">
+      <button class="fk-modal-close" onclick="closeWishlistModal()">✕</button>
+      <div id="wishlistContent"></div>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="fk-modal-overlay">
+    <div class="fk-modal-content" style="max-width:650px; padding:0; overflow:hidden;">
+      <button class="fk-modal-close" onclick="closeLoginModal()">✕</button>
+      <div style="display:grid; grid-template-columns: 220px 1fr;">
+        <div style="background:var(--primary); color:#fff; padding:32px 24px; display:flex; flex-direction:column; justify-space-between;">
+          <div>
+            <h2 style="font-size:24px; margin-bottom:12px;">Login</h2>
+            <p style="font-size:13px; color:#e0e0e0; line-height:1.5;">Get access to your Orders, Wishlist and Recommendations</p>
+          </div>
+          <div style="margin-top:auto;">
+            <div style="font-size:18px; font-weight:800; font-style:italic;">Flipkart</div>
+          </div>
+        </div>
+        <div style="padding:32px 24px;">
+          <form onsubmit="handleLoginSubmit(event)">
+            <div style="margin-bottom:20px;">
+              <input type="text" placeholder="Enter Email / Mobile number" value="sumit.shraikar@gmail.com" required style="width:100%; border:none; border-bottom:1px solid var(--border); padding:8px 0; outline:none; font-size:14px;" />
+            </div>
+            <div style="margin-bottom:20px; font-size:12px; color:#878787;">
+              By continuing, you agree to Flipkart's <a href="#" style="color:var(--primary);">Terms of Use</a> and <a href="#" style="color:var(--primary);">Privacy Policy</a>.
+            </div>
+            <button type="submit" class="fk-btn-orange" style="width:100%; font-size:15px;">
+              Request OTP
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fk-toast-container"></div>
+
+  <!-- Application Logic JS -->
+  <script src="app.js"></script>
+</body>
+</html>
