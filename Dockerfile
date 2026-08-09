@@ -1,5 +1,5 @@
 FROM nginx:alpine
-WORKDIR /usr/share/ngnix/html
+WORKDIR /usr/share/nginx/html
 COPY index.html styles.css app.js ./
 
 
