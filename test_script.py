@@ -1,83 +1,78 @@
-#!/usr/bin/env python3
-"""
-Single Master Test Script for Flipkart Web Application
-Target: http://3.88.199.213:111/
-Iterations: 50 times loop
-"""
-
-import urllib.request
-import urllib.error
 import time
-import sys
+from playwright.sync_api import sync_playwright
 
-TARGET_URL = "http://3.88.199.213:111"
-ITERATIONS = 50
+def run_test():
+    """
+    Automated E2E test script generated from Chrome DevTools Recording.
+    Target URL: http://34.207.100.138/#
+    """
+    with sync_playwright() as p:
+        # Launch Chrome browser in headless mode for background execution
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            viewport={"width": 966, "height": 695},
+            device_scale_factor=1,
+            is_mobile=False,
+            has_touch=False
+        )
+        page = context.new_page()
 
-# Colors for terminal output
-GREEN = "\033[92m"
-RED = "\033[91m"
-YELLOW = "\033[93m"
-BOLD = "\033[1m"
-RESET = "\033[0m"
+        print("1. Navigating to http://34.207.100.138/#...")
+        page.goto("http://34.207.100.138/#")
 
-def run_master_test(url, iterations):
-    print(f"{BOLD}===================================================={RESET}")
-    print(f"{BOLD} Web Page Availability & Load Test (50 Iterations){RESET}")
-    print(f"{BOLD} Target URL:  {url}{RESET}")
-    print(f"{BOLD} Iterations:  {iterations}{RESET}")
-    print(f"{BOLD}===================================================={RESET}\n")
+        print("2. Clicking search input...")
+        search_input = page.locator("#searchInput")
+        search_input.click()
 
-    total_passed = 0
-    total_failed = 0
-    response_times = []
-    start_suite_time = time.time()
+        print("3. Typing 'apple' into search input...")
+        search_input.fill("apple")
+        page.wait_for_timeout(500)
 
-    for i in range(1, iterations + 1):
-        req_start = time.time()
+        print("4. Selecting first search suggestion...")
+        suggestion = page.locator("#suggestionsList > div:nth-of-type(1) > div > div:nth-of-type(1)")
+        suggestion.wait_for(state="visible", timeout=5000)
+        suggestion.click()
+        page.wait_for_timeout(500)
 
-        try:
-            req = urllib.request.urlopen(f"{url}/", timeout=5)
-            status = req.getcode()
-            content = req.read().decode('utf-8', errors='ignore')
-            elapsed = round((time.time() - req_start) * 1000, 2)
-            response_times.append(elapsed)
+        print("5. Clicking product item...")
+        product_img = page.locator("div.fk-card-img-wrap > img").first
+        product_img.click()
+        page.wait_for_timeout(500)
 
-            if status == 200 and len(content) > 0:
-                print(f"  [Iter {i:02d}/{iterations}] GET / (HTTP 200 OK) - Latency: {elapsed:6.2f} ms: {GREEN}PASSED{RESET}")
-                total_passed += 1
-            else:
-                print(f"  [Iter {i:02d}/{iterations}] GET / (Status: {status}): {RED}FAILED{RESET}")
-                total_failed += 1
-        except Exception as e:
-            elapsed = round((time.time() - req_start) * 1000, 2)
-            print(f"  [Iter {i:02d}/{iterations}] GET / Error: {e} ({elapsed} ms): {RED}FAILED{RESET}")
-            total_failed += 1
+        print("6. Clicking BUY NOW...")
+        buy_now_btn = page.locator("#productDetailModal button.fk-btn-orange")
+        buy_now_btn.wait_for(state="visible", timeout=5000)
+        buy_now_btn.click()
+        page.wait_for_timeout(500)
 
-        time.sleep(0.05)
+        print("7. Selecting checkout options...")
+        opt1 = page.locator("#checkoutModal div:nth-of-type(2) > div:nth-of-type(2)")
+        opt1.click()
+        page.wait_for_timeout(300)
+        
+        opt2 = page.locator("#checkoutModal div:nth-of-type(2) > div:nth-of-type(3)")
+        opt2.click()
+        page.wait_for_timeout(300)
 
-    total_suite_time = round(time.time() - start_suite_time, 2)
-    avg_latency = round(sum(response_times) / len(response_times), 2) if response_times else 0
-    min_latency = round(min(response_times), 2) if response_times else 0
-    max_latency = round(max(response_times), 2) if response_times else 0
+        print("8. Clicking CONFIRM & PAY...")
+        confirm_btn = page.locator("#checkoutContent button")
+        confirm_btn.click()
+        page.wait_for_timeout(500)
 
-    print(f"\n{BOLD}===================================================={RESET}")
-    print(f"{BOLD} FINAL TEST SUMMARY{RESET}")
-    print(f"{BOLD}===================================================={RESET}")
-    print(f" Total Loop Iterations:  {iterations}")
-    print(f" {GREEN}Passed Iterations:      {total_passed}{RESET}")
-    print(f" {RED}Failed Iterations:      {total_failed}{RESET}")
-    print(f" Latency (Min/Avg/Max):  {min_latency} ms / {avg_latency} ms / {max_latency} ms")
-    print(f" Total Execution Time:   {total_suite_time} seconds")
-    print(f"{BOLD}===================================================={RESET}")
+        print("9. Clicking View My Orders...")
+        view_orders_btn = page.locator("#successModal button:nth-of-type(1)")
+        view_orders_btn.wait_for(state="visible", timeout=5000)
+        view_orders_btn.click()
+        page.wait_for_timeout(500)
 
-    if total_failed == 0:
-        print(f"\n{GREEN}{BOLD}✅ ALL 50 ITERATIONS PASSED SUCCESSFULLY!{RESET}")
-        sys.exit(0)
-    else:
-        print(f"\n{RED}{BOLD}❌ {total_failed} ITERATION(S) FAILED.{RESET}")
-        sys.exit(1)
+        print("10. Closing orders modal...")
+        close_orders_btn = page.locator("#ordersModal button")
+        close_orders_btn.wait_for(state="visible", timeout=5000)
+        close_orders_btn.click()
+        page.wait_for_timeout(1000)
+
+        print("\n✅ All test steps completed successfully!")
+        browser.close()
 
 if __name__ == "__main__":
-    url = sys.argv[1] if len(sys.argv) > 1 else TARGET_URL
-    loops = int(sys.argv[2]) if len(sys.argv) > 2 else ITERATIONS
-    run_master_test(url, loops)
+    run_test()
