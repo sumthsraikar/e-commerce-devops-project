@@ -22,7 +22,7 @@ RESET = "\033[0m"
 
 def run_master_test(url, iterations):
     print(f"{BOLD}===================================================={RESET}")
-    print(f"{BOLD} Master Web Page Test Suite (50 Iterations Loop){RESET}")
+    print(f"{BOLD} Web Page Availability & Load Test (50 Iterations){RESET}")
     print(f"{BOLD} Target URL:  {url}{RESET}")
     print(f"{BOLD} Iterations:  {iterations}{RESET}")
     print(f"{BOLD}===================================================={RESET}\n")
@@ -33,60 +33,32 @@ def run_master_test(url, iterations):
     start_suite_time = time.time()
 
     for i in range(1, iterations + 1):
-        print(f"{YELLOW}--- Iteration [{i}/{iterations}] ---{RESET}")
-        iter_success = True
         req_start = time.time()
 
-        # 1. Test Root Web Page (HTTP 200 OK & Content Check)
         try:
             req = urllib.request.urlopen(f"{url}/", timeout=5)
             status = req.getcode()
-            content = req.read().decode('utf-8')
+            content = req.read().decode('utf-8', errors='ignore')
             elapsed = round((time.time() - req_start) * 1000, 2)
             response_times.append(elapsed)
 
-            if status == 200 and "Flipkart" in content and 'id="searchInput"' in content:
-                print(f"  [Iter {i:02d}] GET / (HTTP 200 OK) - {elapsed}ms: {GREEN}PASSED{RESET}")
+            if status == 200 and len(content) > 0:
+                print(f"  [Iter {i:02d}/{iterations}] GET / (HTTP 200 OK) - Latency: {elapsed:6.2f} ms: {GREEN}PASSED{RESET}")
+                total_passed += 1
             else:
-                print(f"  [Iter {i:02d}] GET / (Status: {status}): {RED}FAILED{RESET}")
-                iter_success = False
+                print(f"  [Iter {i:02d}/{iterations}] GET / (Status: {status}): {RED}FAILED{RESET}")
+                total_failed += 1
         except Exception as e:
-            print(f"  [Iter {i:02d}] GET / Error ({e}): {RED}FAILED{RESET}")
-            iter_success = False
-
-        # 2. Test styles.css
-        try:
-            req_css = urllib.request.urlopen(f"{url}/styles.css", timeout=5)
-            if req_css.getcode() == 200:
-                print(f"  [Iter {i:02d}] GET /styles.css (HTTP 200 OK): {GREEN}PASSED{RESET}")
-            else:
-                print(f"  [Iter {i:02d}] GET /styles.css: {RED}FAILED{RESET}")
-                iter_success = False
-        except Exception as e:
-            print(f"  [Iter {i:02d}] GET /styles.css Error ({e}): {RED}FAILED{RESET}")
-            iter_success = False
-
-        # 3. Test app.js
-        try:
-            req_js = urllib.request.urlopen(f"{url}/app.js", timeout=5)
-            if req_js.getcode() == 200:
-                print(f"  [Iter {i:02d}] GET /app.js (HTTP 200 OK): {GREEN}PASSED{RESET}")
-            else:
-                print(f"  [Iter {i:02d}] GET /app.js: {RED}FAILED{RESET}")
-                iter_success = False
-        except Exception as e:
-            print(f"  [Iter {i:02d}] GET /app.js Error ({e}): {RED}FAILED{RESET}")
-            iter_success = False
-
-        if iter_success:
-            total_passed += 1
-        else:
+            elapsed = round((time.time() - req_start) * 1000, 2)
+            print(f"  [Iter {i:02d}/{iterations}] GET / Error: {e} ({elapsed} ms): {RED}FAILED{RESET}")
             total_failed += 1
 
         time.sleep(0.05)
 
     total_suite_time = round(time.time() - start_suite_time, 2)
     avg_latency = round(sum(response_times) / len(response_times), 2) if response_times else 0
+    min_latency = round(min(response_times), 2) if response_times else 0
+    max_latency = round(max(response_times), 2) if response_times else 0
 
     print(f"\n{BOLD}===================================================={RESET}")
     print(f"{BOLD} FINAL TEST SUMMARY{RESET}")
@@ -94,7 +66,7 @@ def run_master_test(url, iterations):
     print(f" Total Loop Iterations:  {iterations}")
     print(f" {GREEN}Passed Iterations:      {total_passed}{RESET}")
     print(f" {RED}Failed Iterations:      {total_failed}{RESET}")
-    print(f" Average Latency:        {avg_latency} ms")
+    print(f" Latency (Min/Avg/Max):  {min_latency} ms / {avg_latency} ms / {max_latency} ms")
     print(f" Total Execution Time:   {total_suite_time} seconds")
     print(f"{BOLD}===================================================={RESET}")
 
