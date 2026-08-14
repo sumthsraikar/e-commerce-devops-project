@@ -1,0 +1,842 @@
+openapi: 3.0.3
+info:
+  title: Flipkart E-Commerce Platform API & Web Services
+  description: |
+    Comprehensive OpenAPI Specification (OpenSpec) for the Flipkart E-Commerce DevOps Project.
+    
+    This specification outlines:
+    - **Frontend & Static Web Endpoints** served via Nginx (Containerized deployment).
+    - **Health Check & Observability Endpoints** for Docker, Kubernetes, and Locust Load Testing.
+    - **Core E-Commerce REST Services** including Catalog, Search, Cart, Orders, Wishlist, and Authentication.
+    - **Data Schemas & Response Models** standardizing payload formats and error handling.
+  version: 1.0.0
+  contact:
+    name: DevOps Team
+    url: https://github.com/sumthsraikar/e-commerce-devops-project
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:80
+    description: Local Docker / Nginx Container Instance
+  - url: http://localhost:8080
+    description: Development / Staging Environment
+  - url: https://api.flipkart-devops.local
+    description: Production Ingress / Gateway
+
+tags:
+  - name: System & Observability
+    description: Health monitoring and service availability checks
+  - name: Static & Web Delivery
+    description: Core web assets, SPA routing, and media endpoints
+  - name: Products & Catalog
+    description: Product discovery, filtering, categories, and item specifications
+  - name: Search & Autocomplete
+    description: Search query matching and live keyword suggestions
+  - name: Cart & Checkout
+    description: Shopping cart state management and checkout process
+  - name: Orders
+    description: Order placement, tracking, and purchase history
+  - name: Wishlist
+    description: User saved items and favorites management
+  - name: Authentication & User
+    description: User session, OTP/Password login, and profile
+
+paths:
+  # ==========================================
+  # SYSTEM & OBSERVABILITY ENDPOINTS
+  # ==========================================
+  /health:
+    get:
+      tags:
+        - System & Observability
+      summary: Service Health Check
+      description: Returns service operational status for Docker container health checks, Kubernetes liveness/readiness probes, and Locust load testing.
+      operationId: getHealthStatus
+      responses:
+        '200':
+          description: Service is healthy and operational
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: healthy
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  # ==========================================
+  # STATIC & WEB DELIVERY
+  # ==========================================
+  /:
+    get:
+      tags:
+        - Static & Web Delivery
+      summary: Root Web Application (SPA Entrypoint)
+      description: Serves the primary Flipkart storefront single-page application.
+      operationId: getStorefront
+      responses:
+        '200':
+          description: HTML page rendered successfully
+          content:
+            text/html:
+              schema:
+                type: string
+
+  # ==========================================
+  # PRODUCTS & CATALOG
+  # ==========================================
+  /api/v1/products:
+    get:
+      tags:
+        - Products & Catalog
+      summary: List and Filter Products
+      description: Retrieve catalog products with optional category, price range, Flipkart Assured status, and sorting filters.
+      operationId: listProducts
+      parameters:
+        - name: category
+          in: query
+          description: Filter products by category name
+          required: false
+          schema:
+            type: string
+            enum: [All, Mobiles, Electronics, Appliances, Fashion, Audio, Beauty]
+            default: All
+        - name: search
+          in: query
+          description: Text search query across title, brand, and specifications
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting criterion
+          required: false
+          schema:
+            type: string
+            enum: [popularity, price_low, price_high, rating, newest]
+            default: popularity
+        - name: minPrice
+          in: query
+          description: Minimum price filter in INR (₹)
+          required: false
+          schema:
+            type: number
+            minimum: 0
+        - name: maxPrice
+          in: query
+          description: Maximum price filter in INR (₹)
+          required: false
+          schema:
+            type: number
+        - name: assured
+          in: query
+          description: Filter for Flipkart Assured products only
+          required: false
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Successful retrieval of product list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/products/{id}:
+    get:
+      tags:
+        - Products & Catalog
+      summary: Get Product by ID
+      description: Fetch complete details, technical specifications, and highlights for a single product.
+      operationId: getProductById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique product identifier
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/categories:
+    get:
+      tags:
+        - Products & Catalog
+      summary: Get All Categories
+      description: Retrieve list of product categories with metadata and icons.
+      operationId: getCategories
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+  # ==========================================
+  # SEARCH & AUTOCOMPLETE
+  # ==========================================
+  /api/v1/search/suggestions:
+    get:
+      tags:
+        - Search & Autocomplete
+      summary: Search Suggestions and Autocomplete
+      description: Returns real-time search suggestions and matching brand/product queries.
+      operationId: getSearchSuggestions
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Partial search query term
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Array of search suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    type: string
+                    example: iphone
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Apple iPhone 15 Pro", "iPhone 15", "Apple MacBook Air"]
+
+  # ==========================================
+  # CART & CHECKOUT
+  # ==========================================
+  /api/v1/cart:
+    get:
+      tags:
+        - Cart & Checkout
+      summary: Get User Cart
+      description: Retrieve items currently placed in the shopping cart along with price summary, discount calculation, and delivery charges.
+      operationId: getCart
+      responses:
+        '200':
+          description: Active cart contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSummary'
+    post:
+      tags:
+        - Cart & Checkout
+      summary: Add Item to Cart
+      description: Add a product to the active cart or increment its quantity.
+      operationId: addToCart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToCartRequest'
+      responses:
+        '200':
+          description: Item added or updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSummary'
+        '400':
+          description: Invalid product ID or quantity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/cart/{productId}:
+    put:
+      tags:
+        - Cart & Checkout
+      summary: Update Cart Item Quantity
+      description: Update the quantity of a specific item in the cart.
+      operationId: updateCartItem
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 0
+                  example: 2
+      responses:
+        '200':
+          description: Cart updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSummary'
+
+    delete:
+      tags:
+        - Cart & Checkout
+      summary: Remove Item from Cart
+      description: Remove a product completely from the active shopping cart.
+      operationId: removeFromCart
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Item removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSummary'
+
+  /api/v1/cart/checkout:
+    post:
+      tags:
+        - Cart & Checkout
+      summary: Checkout and Place Order
+      description: Convert items in the active cart into a confirmed order.
+      operationId: checkoutCart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '201':
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Cart is empty or invalid address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==========================================
+  # ORDERS
+  # ==========================================
+  /api/v1/orders:
+    get:
+      tags:
+        - Orders
+      summary: List User Orders
+      description: Retrieve user purchase and order history.
+      operationId: listOrders
+      responses:
+        '200':
+          description: List of user orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+
+  /api/v1/orders/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: Get Order Details
+      description: Fetch status and line-item details for a specific order.
+      operationId: getOrderById
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "OD1723631900123"
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==========================================
+  # WISHLIST
+  # ==========================================
+  /api/v1/wishlist:
+    get:
+      tags:
+        - Wishlist
+      summary: Get Wishlist Items
+      description: Retrieve user's saved wishlist products.
+      operationId: getWishlist
+      responses:
+        '200':
+          description: List of wishlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /api/v1/wishlist/toggle:
+    post:
+      tags:
+        - Wishlist
+      summary: Toggle Item in Wishlist
+      description: Add or remove a product from the user wishlist.
+      operationId: toggleWishlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId]
+              properties:
+                productId:
+                  type: integer
+                  example: 1
+      responses:
+        '200':
+          description: Wishlist updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inWishlist:
+                    type: boolean
+                    example: true
+                  totalWishlistCount:
+                    type: integer
+                    example: 3
+
+  # ==========================================
+  # AUTHENTICATION & USER
+  # ==========================================
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication & User
+      summary: User Login
+      description: Authenticate user using email/mobile and password or OTP.
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Unauthorized / Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Authentication & User
+      summary: User Logout
+      description: Invalidate active user session or token.
+      operationId: logoutUser
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out successfully
+
+components:
+  schemas:
+    # ------------------------------------------
+    # Health Status Model
+    # ------------------------------------------
+    HealthStatus:
+      type: object
+      required: [status, timestamp, service]
+      properties:
+        status:
+          type: string
+          example: healthy
+        service:
+          type: string
+          example: flipkart-ecommerce-service
+        version:
+          type: string
+          example: 1.0.0
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-08-14T19:00:00Z"
+        uptimeSeconds:
+          type: number
+          example: 3600
+
+    # ------------------------------------------
+    # Product Model
+    # ------------------------------------------
+    Product:
+      type: object
+      required:
+        - id
+        - title
+        - brand
+        - category
+        - price
+        - mrp
+        - rating
+        - ratingCount
+        - assured
+        - image
+        - specs
+        - highlights
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Apple iPhone 15 Pro (128 GB) - Natural Titanium"
+        brand:
+          type: string
+          example: "Apple"
+        category:
+          type: string
+          example: "Mobiles"
+        price:
+          type: number
+          description: Current discounted selling price in INR (₹)
+          example: 127990
+        mrp:
+          type: number
+          description: Maximum Retail Price in INR (₹)
+          example: 134900
+        rating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+          example: 4.7
+        ratingCount:
+          type: integer
+          example: 14230
+        assured:
+          type: boolean
+          description: Indicates Flipkart Assured quality badge
+          example: true
+        image:
+          type: string
+          format: uri
+          example: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500"
+        specs:
+          type: array
+          items:
+            type: string
+          example:
+            - "128 GB ROM"
+            - "15.49 cm (6.1 inch) Super Retina XDR Display"
+            - "48MP + 12MP + 12MP | 12MP Front"
+            - "A17 Pro Chip 6 Core Processor"
+        highlights:
+          type: array
+          items:
+            type: string
+          example:
+            - "Grade 5 Titanium design with textured matte glass back"
+            - "Action button for quick shortcuts"
+            - "USB-C support with USB 3 speeds"
+
+    # ------------------------------------------
+    # Product List Response
+    # ------------------------------------------
+    ProductListResponse:
+      type: object
+      required: [total, page, limit, products]
+      properties:
+        total:
+          type: integer
+          example: 16
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+
+    # ------------------------------------------
+    # Category Model
+    # ------------------------------------------
+    Category:
+      type: object
+      required: [id, name, icon]
+      properties:
+        id:
+          type: string
+          example: "Mobiles"
+        name:
+          type: string
+          example: "Mobiles & Accessories"
+        icon:
+          type: string
+          example: "📱"
+        itemCount:
+          type: integer
+          example: 4
+
+    # ------------------------------------------
+    # Cart Models
+    # ------------------------------------------
+    CartItem:
+      type: object
+      required: [product, quantity]
+      properties:
+        product:
+          $ref: '#/components/schemas/Product'
+        quantity:
+          type: integer
+          minimum: 1
+          example: 1
+        subtotal:
+          type: number
+          example: 127990
+
+    CartSummary:
+      type: object
+      required: [items, totalItems, totalPrice, totalMrp, totalDiscount, deliveryCharge, finalPayable]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        totalItems:
+          type: integer
+          example: 2
+        totalMrp:
+          type: number
+          example: 169890
+        totalPrice:
+          type: number
+          example: 154980
+        totalDiscount:
+          type: number
+          example: 14910
+        deliveryCharge:
+          type: number
+          description: Delivery fee (0 if free delivery threshold met)
+          example: 0
+        finalPayable:
+          type: number
+          example: 154980
+
+    AddToCartRequest:
+      type: object
+      required: [productId]
+      properties:
+        productId:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          default: 1
+          minimum: 1
+          example: 1
+
+    CheckoutRequest:
+      type: object
+      required: [deliveryAddress, paymentMethod]
+      properties:
+        deliveryAddress:
+          type: object
+          required: [fullName, mobile, pincode, addressLine, city, state]
+          properties:
+            fullName:
+              type: string
+              example: "Sumit S Raikar"
+            mobile:
+              type: string
+              example: "+919876543210"
+            pincode:
+              type: string
+              example: "560001"
+            addressLine:
+              type: string
+              example: "123 Tech Park, Indiranagar"
+            city:
+              type: string
+              example: "Bengaluru"
+            state:
+              type: string
+              example: "Karnataka"
+        paymentMethod:
+          type: string
+          enum: [UPI, CARD, NET_BANKING, COD]
+          example: "UPI"
+
+    # ------------------------------------------
+    # Order Model
+    # ------------------------------------------
+    Order:
+      type: object
+      required: [orderId, orderDate, items, totalAmount, status, paymentMethod]
+      properties:
+        orderId:
+          type: string
+          example: "OD1723631900123"
+        orderDate:
+          type: string
+          format: date-time
+          example: "2026-08-14T13:30:00Z"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        totalAmount:
+          type: number
+          example: 127990
+        status:
+          type: string
+          enum: [PLACED, PROCESSING, SHIPPED, DELIVERED, CANCELLED]
+          example: "PLACED"
+        deliveryAddress:
+          type: string
+          example: "123 Tech Park, Bengaluru, Karnataka - 560001"
+        paymentMethod:
+          type: string
+          example: "UPI"
+
+    # ------------------------------------------
+    # Auth Models
+    # ------------------------------------------
+    LoginRequest:
+      type: object
+      required: [identifier]
+      properties:
+        identifier:
+          type: string
+          description: User Email address or 10-digit Mobile number
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          example: "securePassword123"
+        otp:
+          type: string
+          example: "458921"
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 101
+            name:
+              type: string
+              example: "Sumit Raikar"
+            email:
+              type: string
+              example: "user@example.com"
+            isPlusMember:
+              type: boolean
+              example: true
+
+    # ------------------------------------------
+    # Error Response Model
+    # ------------------------------------------
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          example: "BAD_REQUEST"
+        message:
+          type: string
+          example: "Invalid parameter provided in request."
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-08-14T19:00:00Z"

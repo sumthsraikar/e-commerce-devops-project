@@ -1,0 +1,13 @@
+{
+  "name": "flipkart-api-gateway",
+  "version": "1.0.0",
+  "description": "Flipkart Microservices - API Gateway & Reverse Proxy",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["gateway", "proxy", "microservices"],
+  "author": "DevOps Team",
+  "license": "MIT"
+}

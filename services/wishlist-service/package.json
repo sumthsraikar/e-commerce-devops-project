@@ -1,0 +1,13 @@
+{
+  "name": "flipkart-wishlist-service",
+  "version": "1.0.0",
+  "description": "Flipkart Microservices - Wishlist Service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["wishlist", "microservices"],
+  "author": "DevOps Team",
+  "license": "MIT"
+}

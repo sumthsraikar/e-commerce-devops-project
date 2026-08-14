@@ -219,6 +219,28 @@ let state = {
   couponDiscount: 0
 };
 
+// API Gateway Base URL
+const API_GATEWAY_URL = 'http://localhost:8000/api/v1';
+
+// Synchronize with Microservices via API Gateway
+async function initMicroservicesData() {
+  try {
+    const res = await fetch(`${API_GATEWAY_URL}/products`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.products && data.products.length > 0) {
+        state.products = data.products;
+        state.filteredProducts = [...data.products];
+        renderDeals();
+        renderProducts();
+        console.log('✔ Connected to Catalog Microservice via Gateway');
+      }
+    }
+  } catch (err) {
+    console.log('ℹ Running in standalone/fallback mode (Gateway offline)');
+  }
+}
+
 // DOM Content Loaded Initializer
 document.addEventListener('DOMContentLoaded', () => {
   initCarousel();
@@ -227,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderProducts();
   updateHeaderCounters();
   setupEventListeners();
+  initMicroservicesData();
 });
 
 // Save State to LocalStorage
@@ -933,7 +956,7 @@ function closeCheckoutModal() {
 }
 
 // Confirm Order
-function confirmOrder(amount) {
+async function confirmOrder(amount) {
   const newOrder = {
     id: 'OD' + Math.floor(1000000000 + Math.random() * 9000000000),
     date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -942,6 +965,21 @@ function confirmOrder(amount) {
     status: 'Packed', // Step 2 in tracker
     estimatedDelivery: 'In 2 Days'
   };
+
+  // Asynchronously dispatch to Order Microservice
+  try {
+    fetch(`${API_GATEWAY_URL}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: state.cart,
+        totalAmount: amount,
+        paymentMethod: 'UPI'
+      })
+    }).catch(e => console.log('Order Service sync optional fallback:', e.message));
+  } catch (e) {
+    // Graceful offline handling
+  }
 
   state.orders.unshift(newOrder);
   state.cart = [];

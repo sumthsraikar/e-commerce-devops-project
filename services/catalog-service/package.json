@@ -1,0 +1,13 @@
+{
+  "name": "flipkart-catalog-service",
+  "version": "1.0.0",
+  "description": "Flipkart Microservices - Catalog & Products Service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["catalog", "microservices"],
+  "author": "DevOps Team",
+  "license": "MIT"
+}

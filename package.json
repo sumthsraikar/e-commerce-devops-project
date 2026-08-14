@@ -1,0 +1,19 @@
+{
+  "name": "flipkart-microservices",
+  "version": "1.0.0",
+  "description": "Flipkart E-Commerce Microservices Project",
+  "main": "start-all.js",
+  "scripts": {
+    "start": "node start-all.js",
+    "dev": "node start-all.js",
+    "start:gateway": "node gateway/server.js",
+    "start:catalog": "node services/catalog-service/server.js",
+    "start:search": "node services/search-service/server.js",
+    "start:cart": "node services/cart-service/server.js",
+    "start:order": "node services/order-service/server.js",
+    "start:wishlist": "node services/wishlist-service/server.js"
+  },
+  "keywords": ["microservices", "devops", "ecommerce", "gateway"],
+  "author": "DevOps Team",
+  "license": "MIT"
+}

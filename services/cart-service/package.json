@@ -1,0 +1,13 @@
+{
+  "name": "flipkart-cart-service",
+  "version": "1.0.0",
+  "description": "Flipkart Microservices - Cart Management Service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["cart", "microservices"],
+  "author": "DevOps Team",
+  "license": "MIT"
+}

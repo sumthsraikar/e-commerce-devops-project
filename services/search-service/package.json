@@ -1,0 +1,13 @@
+{
+  "name": "flipkart-search-service",
+  "version": "1.0.0",
+  "description": "Flipkart Microservices - Search & Autocomplete Service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["search", "microservices"],
+  "author": "DevOps Team",
+  "license": "MIT"
+}
