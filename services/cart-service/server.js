@@ -64,6 +64,23 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
 
+  // Root Info
+  if (pathname === '/' && req.method === 'GET') {
+    return sendJSON(res, 200, {
+      service: 'cart-service',
+      port: PORT,
+      status: 'UP',
+      endpoints: [
+        '/health',
+        '/api/v1/cart',
+        'POST /api/v1/cart/items',
+        'PUT /api/v1/cart/items/:id',
+        'DELETE /api/v1/cart/items/:id',
+        'DELETE /api/v1/cart/clear'
+      ]
+    });
+  }
+
   // Health check
   if (pathname === '/health' && req.method === 'GET') {
     return sendJSON(res, 200, {

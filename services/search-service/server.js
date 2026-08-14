@@ -30,6 +30,20 @@ const server = http.createServer((req, res) => {
   const pathname = parsedUrl.pathname;
   const query = parsedUrl.query;
 
+  // Root Info
+  if (pathname === '/' && req.method === 'GET') {
+    return sendJSON(res, 200, {
+      service: 'search-service',
+      port: PORT,
+      status: 'UP',
+      endpoints: [
+        '/health',
+        '/api/v1/search?q=iphone',
+        '/api/v1/search/suggestions?q=app'
+      ]
+    });
+  }
+
   // Health check
   if (pathname === '/health' && req.method === 'GET') {
     return sendJSON(res, 200, {
