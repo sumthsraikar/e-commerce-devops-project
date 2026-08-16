@@ -4,7 +4,7 @@ metadata:
   name: gateway-api
   namespace: prod
 spec:
-  replicas: 2
+
   selector:
     matchLabels:
       app: gateway-api

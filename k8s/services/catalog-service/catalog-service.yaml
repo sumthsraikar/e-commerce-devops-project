@@ -4,7 +4,7 @@ metadata:
   name: catalog-service
   namespace: prod
 spec:
-  replicas: 2
+
   selector:
     matchLabels:
       app: catalog-service
