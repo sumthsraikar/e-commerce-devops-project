@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wishlist-service
+  namespace: prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wishlist-service
+  template:
+    metadata:
+      labels:
+        app: wishlist-service
+    spec:
+      containers:
+        - name: wishlist-service
+          image: sumithsraikar/e-commerce-devops-project:wishlist-service-v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5005
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wishlist-service
+  namespace: prod
+spec:
+  type: ClusterIP
+  selector:
+    app: wishlist-service
+  ports:
+    - port: 5005
+      targetPort: 5005
+      protocol: TCP
+
+
