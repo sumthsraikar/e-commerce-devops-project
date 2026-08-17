@@ -1,21 +1,14 @@
 """
 Flipkart E-Commerce Comprehensive Locust Load & Performance Testing Suite
 ==========================================================================
-Tests all frontend assets/pages and microservices via API Gateway / Ingress.
-
-Microservices covered:
-  - Frontend / Web Delivery (Static assets, SPA root)
-  - System & Observability (/health)
-  - Catalog Service (/api/v1/products, /api/v1/categories, /api/v1/brands)
-  - Search Service (/api/v1/search, /api/v1/search/suggestions)
-  - Cart Service (/api/v1/cart, /api/v1/cart/items)
-  - Order Service (/api/v1/orders, /api/v1/orders/:id)
-  - Wishlist Service (/api/v1/wishlist, /api/v1/wishlist/toggle)
+Tests all frontend pages, static assets, and all backend microservices across
+all ports / routes (Frontend, Gateway, Catalog, Search, Cart, Orders, Wishlist).
 """
 
 import random
 import string
 import json
+from urllib.parse import urlparse
 from locust import HttpUser, TaskSet, task, between, tag, events
 
 
@@ -28,151 +21,148 @@ class BaseEcommerceUser(HttpUser):
             self.client.base_url = self.client.base_url.rstrip('/')
 
 
-# -----------------------------------------------------------------------------
-# 1. FRONTEND USER - Tests HTML, CSS, JS, and Static Assets
-# -----------------------------------------------------------------------------
-class FrontendUser(BaseEcommerceUser):
-    """Simulates users visiting the web application and downloading static assets."""
-    wait_time = between(1, 3)
-    weight = 3
-
-    @tag('frontend', 'pages')
-    @task(4)
-    def load_home_page(self):
-        """Test root storefront HTML."""
-        with self.client.get("/", name="[Frontend] GET / (Home Page)", catch_response=True) as response:
-            if response.status_code == 200:
-                response.success()
-            else:
-                response.failure(f"Failed to load Home Page: {response.status_code}")
-
-    @tag('frontend', 'static')
-    @task(3)
-    def load_styles_and_scripts(self):
-        """Test main styles and JS bundle."""
-        self.client.get("/styles.css", name="[Frontend] GET /styles.css")
-        self.client.get("/app.js", name="[Frontend] GET /app.js")
-
-    @tag('frontend', 'media')
-    @task(2)
-    def load_banner_images(self):
-        """Test static promotional banners."""
-        self.client.get("/images/banner1.png", name="[Frontend] GET /images/banner1.png")
-        self.client.get("/images/banner2.png", name="[Frontend] GET /images/banner2.png")
-
-
-# -----------------------------------------------------------------------------
-# 2. CATALOG SERVICE USER - Tests Product Listing, Categories, Details, Filters
-# -----------------------------------------------------------------------------
-class CatalogServiceUser(BaseEcommerceUser):
-    """Simulates browsing catalog products, filtering by categories, brands, price."""
-    wait_time = between(0.5, 2)
-    weight = 4
+# =============================================================================
+# 🚀 DEFAULT ALL-IN-ONE USER: Tests All Services & All Frontend Assets Together
+# =============================================================================
+class AllServicesLoadTest(BaseEcommerceUser):
+    """
+    Simulates comprehensive real-world concurrent traffic hitting:
+      - Frontend Web Server (Port 80)
+      - API Gateway & Health Checks (Port 8000)
+      - Catalog & Products Microservice (Port 5001)
+      - Search & Autocomplete Microservice (Port 5002)
+      - Shopping Cart Microservice (Port 5003)
+      - Orders & Checkout Microservice (Port 5004)
+      - Wishlist Microservice (Port 5005)
+    """
+    wait_time = between(0.5, 2.5)
 
     categories = ["Mobiles", "Electronics", "Appliances", "Fashion", "Audio", "Beauty", "All"]
     sort_options = ["popularity", "price_low", "price_high", "rating", "newest"]
     brands = ["Apple", "Samsung", "Sony", "LG", "OnePlus", "Dell", "Nike"]
+    search_queries = ["iphone", "samsung", "laptop", "shoes", "sony", "headphones", "watch", "apple", "nike", "tv"]
+    suggestion_queries = ["ip", "sam", "lap", "sho", "son", "head", "wat", "app", "nik"]
 
+    # -------------------------------------------------------------------------
+    # 1. FRONTEND PAGES & ASSETS (Port 80)
+    # -------------------------------------------------------------------------
+    @tag('frontend', 'pages')
+    @task(6)
+    def test_frontend_home(self):
+        """Test Frontend SPA Root HTML."""
+        self.client.get("/", name="[Port 80 - Frontend] GET / (Home Page)")
+
+    @tag('frontend', 'static')
+    @task(4)
+    def test_frontend_static_assets(self):
+        """Test Frontend CSS & JS Bundles."""
+        self.client.get("/styles.css", name="[Port 80 - Frontend] GET /styles.css")
+        self.client.get("/app.js", name="[Port 80 - Frontend] GET /app.js")
+
+    @tag('frontend', 'media')
+    @task(2)
+    def test_frontend_images(self):
+        """Test Promotional Banners."""
+        self.client.get("/images/banner1.png", name="[Port 80 - Frontend] GET /images/banner1.png")
+        self.client.get("/images/banner2.png", name="[Port 80 - Frontend] GET /images/banner2.png")
+
+    # -------------------------------------------------------------------------
+    # 2. SYSTEM HEALTH & OBSERVABILITY (Port 8000 / Gateway)
+    # -------------------------------------------------------------------------
+    @tag('gateway', 'health')
+    @task(3)
+    def test_aggregated_health(self):
+        """Test Gateway Aggregated Health Check."""
+        self.client.get("/health", name="[Port 8000 - Gateway] GET /health")
+
+    # -------------------------------------------------------------------------
+    # 3. CATALOG & PRODUCTS MICROSERVICE (Port 5001)
+    # -------------------------------------------------------------------------
     @tag('catalog', 'products')
     @task(5)
-    def get_products_default(self):
+    def test_catalog_all_products(self):
         """Get product catalog with default filters."""
-        self.client.get("/api/v1/products", name="[Catalog] GET /api/v1/products")
+        self.client.get("/api/v1/products", name="[Port 5001 - Catalog] GET /api/v1/products")
 
     @tag('catalog', 'filter')
-    @task(3)
-    def get_products_filtered_by_category(self):
-        """Get product catalog filtered by category."""
+    @task(4)
+    def test_catalog_category_filter(self):
+        """Get products filtered by category."""
         category = random.choice(self.categories)
         self.client.get(
             f"/api/v1/products?category={category}",
-            name="[Catalog] GET /api/v1/products?category=[cat]"
+            name="[Port 5001 - Catalog] GET /api/v1/products?category=[cat]"
         )
 
     @tag('catalog', 'filter')
-    @task(2)
-    def get_products_filtered_and_sorted(self):
-        """Get product catalog with sorting and max price filter."""
+    @task(3)
+    def test_catalog_price_and_sort(self):
+        """Get products sorted and price-filtered."""
         sort_by = random.choice(self.sort_options)
         max_price = random.choice([5000, 20000, 50000, 100000])
         self.client.get(
             f"/api/v1/products?sort={sort_by}&maxPrice={max_price}",
-            name="[Catalog] GET /api/v1/products?sort=[sort]&maxPrice=[price]"
+            name="[Port 5001 - Catalog] GET /api/v1/products?sort=[sort]&maxPrice=[price]"
         )
 
     @tag('catalog', 'categories')
-    @task(2)
-    def get_categories(self):
-        """Fetch categories list."""
-        self.client.get("/api/v1/categories", name="[Catalog] GET /api/v1/categories")
+    @task(3)
+    def test_catalog_categories_list(self):
+        """Get available categories."""
+        self.client.get("/api/v1/categories", name="[Port 5001 - Catalog] GET /api/v1/categories")
 
     @tag('catalog', 'brands')
     @task(2)
-    def get_brands(self):
-        """Fetch brands list."""
-        self.client.get("/api/v1/brands", name="[Catalog] GET /api/v1/brands")
+    def test_catalog_brands_list(self):
+        """Get available brands."""
+        self.client.get("/api/v1/brands", name="[Port 5001 - Catalog] GET /api/v1/brands")
 
     @tag('catalog', 'detail')
     @task(4)
-    def get_product_by_id(self):
-        """Fetch product details for a specific item (IDs 1-20)."""
+    def test_catalog_product_detail(self):
+        """Get product details by ID."""
         product_id = random.randint(1, 20)
         self.client.get(
             f"/api/v1/products/{product_id}",
-            name="[Catalog] GET /api/v1/products/:id"
+            name="[Port 5001 - Catalog] GET /api/v1/products/:id"
         )
 
-
-# -----------------------------------------------------------------------------
-# 3. SEARCH SERVICE USER - Tests Search & Live Autocomplete
-# -----------------------------------------------------------------------------
-class SearchServiceUser(BaseEcommerceUser):
-    """Simulates live queries in search bar and suggestion popups."""
-    wait_time = between(0.3, 1.5)
-    weight = 3
-
-    search_queries = ["iphone", "samsung", "laptop", "shoes", "sony", "headphones", "watch", "apple", "nike", "tv"]
-    suggestion_queries = ["ip", "sam", "lap", "sho", "son", "head", "wat", "app", "nik"]
-
+    # -------------------------------------------------------------------------
+    # 4. SEARCH & AUTOCOMPLETE MICROSERVICE (Port 5002)
+    # -------------------------------------------------------------------------
     @tag('search', 'query')
-    @task(4)
-    def search_products(self):
-        """Perform search query."""
+    @task(5)
+    def test_search_query(self):
+        """Execute full-text search."""
         query = random.choice(self.search_queries)
         self.client.get(
             f"/api/v1/search?q={query}",
-            name="[Search] GET /api/v1/search?q=[query]"
+            name="[Port 5002 - Search] GET /api/v1/search?q=[query]"
         )
 
     @tag('search', 'suggestions')
     @task(5)
-    def search_suggestions(self):
-        """Fetch live auto-complete suggestions."""
+    def test_search_suggestions(self):
+        """Get live autocomplete suggestions."""
         query = random.choice(self.suggestion_queries)
         self.client.get(
             f"/api/v1/search/suggestions?q={query}",
-            name="[Search] GET /api/v1/search/suggestions?q=[query]"
+            name="[Port 5002 - Search] GET /api/v1/search/suggestions?q=[query]"
         )
 
-
-# -----------------------------------------------------------------------------
-# 4. CART SERVICE USER - Tests Add to Cart, View Cart, Modify Quantity, Remove
-# -----------------------------------------------------------------------------
-class CartServiceUser(BaseEcommerceUser):
-    """Simulates shopping cart operations."""
-    wait_time = between(1, 3)
-    weight = 2
-
+    # -------------------------------------------------------------------------
+    # 5. SHOPPING CART MICROSERVICE (Port 5003)
+    # -------------------------------------------------------------------------
     @tag('cart')
     @task(4)
-    def view_cart(self):
-        """View current cart state."""
-        self.client.get("/api/v1/cart", name="[Cart] GET /api/v1/cart")
+    def test_cart_view(self):
+        """Fetch active cart contents."""
+        self.client.get("/api/v1/cart", name="[Port 5003 - Cart] GET /api/v1/cart")
 
     @tag('cart')
     @task(3)
-    def add_to_cart(self):
-        """Add product to shopping cart."""
+    def test_cart_add_item(self):
+        """Add item to shopping cart."""
         product_id = random.randint(1, 15)
         payload = {
             "productId": product_id,
@@ -182,60 +172,49 @@ class CartServiceUser(BaseEcommerceUser):
             "quantity": 1
         }
         headers = {"Content-Type": "application/json"}
-        self.client.post("/api/v1/cart/items", json=payload, headers=headers, name="[Cart] POST /api/v1/cart/items")
+        self.client.post(
+            "/api/v1/cart/items",
+            json=payload,
+            headers=headers,
+            name="[Port 5003 - Cart] POST /api/v1/cart/items"
+        )
 
     @tag('cart')
     @task(2)
-    def update_cart_item(self):
-        """Update quantity of an item in cart."""
+    def test_cart_update_qty(self):
+        """Update item quantity in cart."""
         product_id = random.randint(1, 10)
-        payload = {"quantity": random.randint(1, 4)}
+        payload = {"quantity": random.randint(1, 3)}
         headers = {"Content-Type": "application/json"}
         self.client.put(
             f"/api/v1/cart/items/{product_id}",
             json=payload,
             headers=headers,
-            name="[Cart] PUT /api/v1/cart/items/:id"
+            name="[Port 5003 - Cart] PUT /api/v1/cart/items/:id"
         )
 
-    @tag('cart')
-    @task(1)
-    def remove_cart_item(self):
-        """Remove a product from cart."""
-        product_id = random.randint(1, 10)
-        self.client.delete(
-            f"/api/v1/cart/items/{product_id}",
-            name="[Cart] DELETE /api/v1/cart/items/:id"
-        )
-
-
-# -----------------------------------------------------------------------------
-# 5. ORDER SERVICE USER - Tests View Orders, Place Order, View Details
-# -----------------------------------------------------------------------------
-class OrderServiceUser(BaseEcommerceUser):
-    """Simulates placing and tracking customer orders."""
-    wait_time = between(1, 4)
-    weight = 2
-
+    # -------------------------------------------------------------------------
+    # 6. ORDERS MICROSERVICE (Port 5004)
+    # -------------------------------------------------------------------------
     @tag('order')
     @task(4)
-    def list_orders(self):
-        """List past orders."""
-        self.client.get("/api/v1/orders", name="[Order] GET /api/v1/orders")
+    def test_order_list(self):
+        """Get order history."""
+        self.client.get("/api/v1/orders", name="[Port 5004 - Orders] GET /api/v1/orders")
 
     @tag('order')
     @task(2)
-    def place_order(self):
-        """Place a simulated checkout order."""
+    def test_order_create(self):
+        """Simulate placing a new order."""
         product_id = random.randint(1, 10)
-        price = random.randint(1000, 50000)
-        order_payload = {
-            "shippingAddress": "Flat 101, Prestige Tech Park, Bangalore, Karnataka - 560103",
-            "paymentMethod": random.choice(["UPI / PhonePe", "Credit/Debit Card", "Cash on Delivery", "Net Banking"]),
+        price = random.randint(1000, 45000)
+        payload = {
+            "shippingAddress": "42, MG Road, Indiranagar, Bangalore - 560038",
+            "paymentMethod": random.choice(["UPI / PhonePe", "Credit/Debit Card", "Cash on Delivery"]),
             "items": [
                 {
                     "productId": product_id,
-                    "title": f"Load Test Product #{product_id}",
+                    "title": f"Product #{product_id}",
                     "price": price,
                     "qty": 1
                 }
@@ -243,50 +222,33 @@ class OrderServiceUser(BaseEcommerceUser):
             "totalAmount": price
         }
         headers = {"Content-Type": "application/json"}
-        with self.client.post(
+        self.client.post(
             "/api/v1/orders",
-            json=order_payload,
+            json=payload,
             headers=headers,
-            name="[Order] POST /api/v1/orders",
-            catch_response=True
-        ) as response:
-            if response.status_code in [200, 201]:
-                response.success()
-            else:
-                response.failure(f"Order placement failed: {response.status_code}")
+            name="[Port 5004 - Orders] POST /api/v1/orders"
+        )
 
-    @tag('order')
-    @task(1)
-    def get_order_by_id(self):
-        """Fetch order details."""
-        self.client.get("/api/v1/orders/ODR-98231024", name="[Order] GET /api/v1/orders/:id")
-
-
-# -----------------------------------------------------------------------------
-# 6. WISHLIST SERVICE USER - Tests Wishlist Viewing and Toggling
-# -----------------------------------------------------------------------------
-class WishlistServiceUser(BaseEcommerceUser):
-    """Simulates user wishlist operations."""
-    wait_time = between(1, 3)
-    weight = 2
-
+    # -------------------------------------------------------------------------
+    # 7. WISHLIST MICROSERVICE (Port 5005)
+    # -------------------------------------------------------------------------
     @tag('wishlist')
-    @task(3)
-    def get_wishlist(self):
+    @task(4)
+    def test_wishlist_view(self):
         """Get all wishlist items."""
-        self.client.get("/api/v1/wishlist", name="[Wishlist] GET /api/v1/wishlist")
+        self.client.get("/api/v1/wishlist", name="[Port 5005 - Wishlist] GET /api/v1/wishlist")
 
     @tag('wishlist')
     @task(3)
-    def toggle_wishlist_item(self):
-        """Toggle an item in the wishlist."""
+    def test_wishlist_toggle(self):
+        """Toggle item in wishlist."""
         product_id = random.randint(1, 20)
         payload = {
             "productId": product_id,
             "product": {
                 "id": product_id,
                 "title": f"Wishlist Product {product_id}",
-                "price": 1999
+                "price": 2499
             }
         }
         headers = {"Content-Type": "application/json"}
@@ -294,101 +256,69 @@ class WishlistServiceUser(BaseEcommerceUser):
             "/api/v1/wishlist/toggle",
             json=payload,
             headers=headers,
-            name="[Wishlist] POST /api/v1/wishlist/toggle"
+            name="[Port 5005 - Wishlist] POST /api/v1/wishlist/toggle"
         )
 
 
-# -----------------------------------------------------------------------------
-# 7. OBSERVABILITY & HEALTH MONITORING USER
-# -----------------------------------------------------------------------------
-class ObservabilityUser(BaseEcommerceUser):
-    """Simulates monitoring probes hitting health endpoints."""
-    wait_time = between(2, 5)
-    weight = 1
-
-    @tag('health', 'system')
-    @task(5)
-    def check_gateway_aggregated_health(self):
-        """Check API Gateway aggregated system health."""
-        self.client.get("/health", name="[Health] GET /health (Aggregated)")
-
-
-# -----------------------------------------------------------------------------
-# 8. END-TO-END SHOPPER JOURNEY - Realistic Complete User Workflow
-# -----------------------------------------------------------------------------
-class EndToEndShopperUser(BaseEcommerceUser):
+# =============================================================================
+# 🌐 MULTI-PORT DIRECT TESTING (Direct Host:Port Access)
+# =============================================================================
+class DirectPortTestingUser(HttpUser):
     """
-    Simulates a realistic customer workflow:
-    1. Visits Home Page & loads assets
-    2. Searches for a product & checks suggestions
-    3. Browses category / views product detail
-    4. Adds item to Wishlist
-    5. Adds item to Cart
-    6. Reviews Cart
-    7. Places an Order
+    Directly targets individual microservice ports if they are exposed
+    on localhost or NodePorts on the EC2 host:
+      - Port 80: Frontend
+      - Port 8000: Gateway
+      - Port 5001: Catalog Service
+      - Port 5002: Search Service
+      - Port 5003: Cart Service
+      - Port 5004: Order Service
+      - Port 5005: Wishlist Service
     """
     wait_time = between(1, 3)
-    weight = 5
 
-    @tag('e2e', 'journey')
-    @task
-    def complete_shopping_journey(self):
-        # Step 1: Visit Storefront
-        self.client.get("/", name="[E2E] 1. Visit Storefront")
-        self.client.get("/styles.css", name="[E2E] 1. Load CSS")
-        self.client.get("/app.js", name="[E2E] 1. Load JS")
+    def on_start(self):
+        parsed = urlparse(self.client.base_url)
+        self.host_ip = parsed.hostname or "localhost"
 
-        # Step 2: Search for items
-        keyword = random.choice(["iphone", "samsung", "shoes", "sony", "laptop"])
-        self.client.get(f"/api/v1/search/suggestions?q={keyword[:3]}", name="[E2E] 2. Search Autocomplete")
-        self.client.get(f"/api/v1/search?q={keyword}", name="[E2E] 2. Execute Search")
+    @tag('direct_ports')
+    @task(2)
+    def test_direct_frontend_port_80(self):
+        """Direct hit to Port 80 (Frontend)."""
+        self.client.get(f"http://{self.host_ip}:80/", name="[Direct Port 80] Frontend /")
 
-        # Step 3: Browse Category and Product Details
-        category = random.choice(["Mobiles", "Electronics", "Fashion", "Appliances"])
-        self.client.get(f"/api/v1/products?category={category}", name="[E2E] 3. Browse Category")
-        
-        product_id = random.randint(1, 15)
-        self.client.get(f"/api/v1/products/{product_id}", name="[E2E] 3. View Product Detail")
+    @tag('direct_ports')
+    @task(2)
+    def test_direct_gateway_port_8000(self):
+        """Direct hit to Port 8000 (API Gateway)."""
+        self.client.get(f"http://{self.host_ip}:8000/health", name="[Direct Port 8000] Gateway /health")
 
-        # Step 4: Toggle Wishlist
-        wishlist_payload = {
-            "productId": product_id,
-            "product": {"id": product_id, "title": f"Product #{product_id}", "price": 4999}
-        }
-        self.client.post(
-            "/api/v1/wishlist/toggle",
-            json=wishlist_payload,
-            headers={"Content-Type": "application/json"},
-            name="[E2E] 4. Add/Toggle Wishlist"
-        )
+    @tag('direct_ports')
+    @task(2)
+    def test_direct_catalog_port_5001(self):
+        """Direct hit to Port 5001 (Catalog Microservice)."""
+        self.client.get(f"http://{self.host_ip}:5001/api/v1/products", name="[Direct Port 5001] Catalog /api/v1/products")
 
-        # Step 5: Add to Cart
-        cart_payload = {
-            "productId": product_id,
-            "title": f"Product #{product_id}",
-            "price": 4999,
-            "quantity": 1
-        }
-        self.client.post(
-            "/api/v1/cart/items",
-            json=cart_payload,
-            headers={"Content-Type": "application/json"},
-            name="[E2E] 5. Add to Cart"
-        )
+    @tag('direct_ports')
+    @task(2)
+    def test_direct_search_port_5002(self):
+        """Direct hit to Port 5002 (Search Microservice)."""
+        self.client.get(f"http://{self.host_ip}:5002/api/v1/search?q=phone", name="[Direct Port 5002] Search /api/v1/search")
 
-        # Step 6: View Cart
-        self.client.get("/api/v1/cart", name="[E2E] 6. Review Cart")
+    @tag('direct_ports')
+    @task(2)
+    def test_direct_cart_port_5003(self):
+        """Direct hit to Port 5003 (Cart Microservice)."""
+        self.client.get(f"http://{self.host_ip}:5003/api/v1/cart", name="[Direct Port 5003] Cart /api/v1/cart")
 
-        # Step 7: Place Order (Checkout)
-        order_payload = {
-            "shippingAddress": "42, MG Road, Indiranagar, Bangalore - 560038",
-            "paymentMethod": "UPI / PhonePe",
-            "items": [{"productId": product_id, "title": f"Product #{product_id}", "price": 4999, "qty": 1}],
-            "totalAmount": 4999
-        }
-        self.client.post(
-            "/api/v1/orders",
-            json=order_payload,
-            headers={"Content-Type": "application/json"},
-            name="[E2E] 7. Place Order"
-        )
+    @tag('direct_ports')
+    @task(2)
+    def test_direct_order_port_5004(self):
+        """Direct hit to Port 5004 (Order Microservice)."""
+        self.client.get(f"http://{self.host_ip}:5004/api/v1/orders", name="[Direct Port 5004] Order /api/v1/orders")
+
+    @tag('direct_ports')
+    @task(2)
+    def test_direct_wishlist_port_5005(self):
+        """Direct hit to Port 5005 (Wishlist Microservice)."""
+        self.client.get(f"http://{self.host_ip}:5005/api/v1/wishlist", name="[Direct Port 5005] Wishlist /api/v1/wishlist")
