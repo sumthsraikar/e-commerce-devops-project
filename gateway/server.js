@@ -133,7 +133,7 @@ const server = http.createServer(async (req, res) => {
   const pathname = parsedUrl.pathname;
 
   // Aggregated Health Check across all microservices
-  if (pathname === '/health' && req.method === 'GET') {
+  if ((pathname === '/health' || pathname === '/api/health') && req.method === 'GET') {
     const checks = await Promise.all(SERVICES_HEALTH_LIST.map(checkServiceHealth));
     const allUp = checks.every(c => c.status === 'UP');
 

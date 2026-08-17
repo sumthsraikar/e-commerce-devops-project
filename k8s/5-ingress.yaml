@@ -10,6 +10,13 @@ spec:
   rules:
     - http:
         paths:
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-api
+                port:
+                  number: 8000
           - path: /api
             pathType: Prefix
             backend:
@@ -24,3 +31,4 @@ spec:
                 name: frontend
                 port:
                   number: 80
+

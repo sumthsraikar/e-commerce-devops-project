@@ -19,10 +19,19 @@ import json
 from locust import HttpUser, TaskSet, task, between, tag, events
 
 
+class BaseEcommerceUser(HttpUser):
+    """Base class ensuring clean URL normalization without double slashes."""
+    abstract = True
+
+    def on_start(self):
+        if self.client.base_url and self.client.base_url.endswith('/'):
+            self.client.base_url = self.client.base_url.rstrip('/')
+
+
 # -----------------------------------------------------------------------------
 # 1. FRONTEND USER - Tests HTML, CSS, JS, and Static Assets
 # -----------------------------------------------------------------------------
-class FrontendUser(HttpUser):
+class FrontendUser(BaseEcommerceUser):
     """Simulates users visiting the web application and downloading static assets."""
     wait_time = between(1, 3)
     weight = 3
@@ -55,7 +64,7 @@ class FrontendUser(HttpUser):
 # -----------------------------------------------------------------------------
 # 2. CATALOG SERVICE USER - Tests Product Listing, Categories, Details, Filters
 # -----------------------------------------------------------------------------
-class CatalogServiceUser(HttpUser):
+class CatalogServiceUser(BaseEcommerceUser):
     """Simulates browsing catalog products, filtering by categories, brands, price."""
     wait_time = between(0.5, 2)
     weight = 4
@@ -117,7 +126,7 @@ class CatalogServiceUser(HttpUser):
 # -----------------------------------------------------------------------------
 # 3. SEARCH SERVICE USER - Tests Search & Live Autocomplete
 # -----------------------------------------------------------------------------
-class SearchServiceUser(HttpUser):
+class SearchServiceUser(BaseEcommerceUser):
     """Simulates live queries in search bar and suggestion popups."""
     wait_time = between(0.3, 1.5)
     weight = 3
@@ -149,7 +158,7 @@ class SearchServiceUser(HttpUser):
 # -----------------------------------------------------------------------------
 # 4. CART SERVICE USER - Tests Add to Cart, View Cart, Modify Quantity, Remove
 # -----------------------------------------------------------------------------
-class CartServiceUser(HttpUser):
+class CartServiceUser(BaseEcommerceUser):
     """Simulates shopping cart operations."""
     wait_time = between(1, 3)
     weight = 2
@@ -203,7 +212,7 @@ class CartServiceUser(HttpUser):
 # -----------------------------------------------------------------------------
 # 5. ORDER SERVICE USER - Tests View Orders, Place Order, View Details
 # -----------------------------------------------------------------------------
-class OrderServiceUser(HttpUser):
+class OrderServiceUser(BaseEcommerceUser):
     """Simulates placing and tracking customer orders."""
     wait_time = between(1, 4)
     weight = 2
@@ -256,7 +265,7 @@ class OrderServiceUser(HttpUser):
 # -----------------------------------------------------------------------------
 # 6. WISHLIST SERVICE USER - Tests Wishlist Viewing and Toggling
 # -----------------------------------------------------------------------------
-class WishlistServiceUser(HttpUser):
+class WishlistServiceUser(BaseEcommerceUser):
     """Simulates user wishlist operations."""
     wait_time = between(1, 3)
     weight = 2
@@ -292,7 +301,7 @@ class WishlistServiceUser(HttpUser):
 # -----------------------------------------------------------------------------
 # 7. OBSERVABILITY & HEALTH MONITORING USER
 # -----------------------------------------------------------------------------
-class ObservabilityUser(HttpUser):
+class ObservabilityUser(BaseEcommerceUser):
     """Simulates monitoring probes hitting health endpoints."""
     wait_time = between(2, 5)
     weight = 1
@@ -307,7 +316,7 @@ class ObservabilityUser(HttpUser):
 # -----------------------------------------------------------------------------
 # 8. END-TO-END SHOPPER JOURNEY - Realistic Complete User Workflow
 # -----------------------------------------------------------------------------
-class EndToEndShopperUser(HttpUser):
+class EndToEndShopperUser(BaseEcommerceUser):
     """
     Simulates a realistic customer workflow:
     1. Visits Home Page & loads assets
