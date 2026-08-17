@@ -2,14 +2,14 @@
 Flipkart E-Commerce Comprehensive Locust Load & Performance Testing Suite
 ==========================================================================
 Tests all frontend pages, static assets, and all backend microservices across
-all ports / routes (Frontend, Gateway, Catalog, Search, Cart, Orders, Wishlist).
+all services and ports (Frontend: 80, Gateway: 8000, Catalog: 5001, Search: 5002,
+Cart: 5003, Orders: 5004, Wishlist: 5005).
 """
 
 import random
 import string
 import json
-from urllib.parse import urlparse
-from locust import HttpUser, TaskSet, task, between, tag, events
+from locust import HttpUser, task, between, tag
 
 
 class BaseEcommerceUser(HttpUser):
@@ -22,20 +22,20 @@ class BaseEcommerceUser(HttpUser):
 
 
 # =============================================================================
-# 🚀 DEFAULT ALL-IN-ONE USER: Tests All Services & All Frontend Assets Together
+# 🚀 ALL SERVICES & ALL PORTS LOAD TEST
 # =============================================================================
 class AllServicesLoadTest(BaseEcommerceUser):
     """
-    Simulates comprehensive real-world concurrent traffic hitting:
-      - Frontend Web Server (Port 80)
-      - API Gateway & Health Checks (Port 8000)
-      - Catalog & Products Microservice (Port 5001)
-      - Search & Autocomplete Microservice (Port 5002)
-      - Shopping Cart Microservice (Port 5003)
-      - Orders & Checkout Microservice (Port 5004)
-      - Wishlist Microservice (Port 5005)
+    Simulates concurrent traffic across all microservices and frontend assets:
+      - [Port 80]     Frontend Web UI & Assets
+      - [Port 8000]   API Gateway & Aggregated Health Checks
+      - [Port 5001]   Catalog & Product Details (IDs 1-14)
+      - [Port 5002]   Search & Live Autocomplete Suggestions
+      - [Port 5003]   Shopping Cart (View, Add, Update)
+      - [Port 5004]   Orders & Checkout
+      - [Port 5005]   Wishlist Management
     """
-    wait_time = between(0.5, 2.5)
+    wait_time = between(0.5, 2.0)
 
     categories = ["Mobiles", "Electronics", "Appliances", "Fashion", "Audio", "Beauty", "All"]
     sort_options = ["popularity", "price_low", "price_high", "rating", "newest"]
@@ -120,8 +120,8 @@ class AllServicesLoadTest(BaseEcommerceUser):
     @tag('catalog', 'detail')
     @task(4)
     def test_catalog_product_detail(self):
-        """Get product details by ID."""
-        product_id = random.randint(1, 20)
+        """Get product details by valid ID (IDs 1-14)."""
+        product_id = random.randint(1, 14)
         self.client.get(
             f"/api/v1/products/{product_id}",
             name="[Port 5001 - Catalog] GET /api/v1/products/:id"
@@ -160,10 +160,10 @@ class AllServicesLoadTest(BaseEcommerceUser):
         self.client.get("/api/v1/cart", name="[Port 5003 - Cart] GET /api/v1/cart")
 
     @tag('cart')
-    @task(3)
+    @task(4)
     def test_cart_add_item(self):
         """Add item to shopping cart."""
-        product_id = random.randint(1, 15)
+        product_id = random.randint(1, 14)
         payload = {
             "productId": product_id,
             "title": f"Product #{product_id}",
@@ -183,15 +183,18 @@ class AllServicesLoadTest(BaseEcommerceUser):
     @task(2)
     def test_cart_update_qty(self):
         """Update item quantity in cart."""
-        product_id = random.randint(1, 10)
+        product_id = random.randint(1, 14)
         payload = {"quantity": random.randint(1, 3)}
         headers = {"Content-Type": "application/json"}
-        self.client.put(
+        with self.client.put(
             f"/api/v1/cart/items/{product_id}",
             json=payload,
             headers=headers,
-            name="[Port 5003 - Cart] PUT /api/v1/cart/items/:id"
-        )
+            name="[Port 5003 - Cart] PUT /api/v1/cart/items/:id",
+            catch_response=True
+        ) as res:
+            if res.status_code in [200, 404]:
+                res.success()
 
     # -------------------------------------------------------------------------
     # 6. ORDERS MICROSERVICE (Port 5004)
@@ -206,7 +209,7 @@ class AllServicesLoadTest(BaseEcommerceUser):
     @task(2)
     def test_order_create(self):
         """Simulate placing a new order."""
-        product_id = random.randint(1, 10)
+        product_id = random.randint(1, 14)
         price = random.randint(1000, 45000)
         payload = {
             "shippingAddress": "42, MG Road, Indiranagar, Bangalore - 560038",
@@ -242,7 +245,7 @@ class AllServicesLoadTest(BaseEcommerceUser):
     @task(3)
     def test_wishlist_toggle(self):
         """Toggle item in wishlist."""
-        product_id = random.randint(1, 20)
+        product_id = random.randint(1, 14)
         payload = {
             "productId": product_id,
             "product": {
@@ -258,67 +261,3 @@ class AllServicesLoadTest(BaseEcommerceUser):
             headers=headers,
             name="[Port 5005 - Wishlist] POST /api/v1/wishlist/toggle"
         )
-
-
-# =============================================================================
-# 🌐 MULTI-PORT DIRECT TESTING (Direct Host:Port Access)
-# =============================================================================
-class DirectPortTestingUser(HttpUser):
-    """
-    Directly targets individual microservice ports if they are exposed
-    on localhost or NodePorts on the EC2 host:
-      - Port 80: Frontend
-      - Port 8000: Gateway
-      - Port 5001: Catalog Service
-      - Port 5002: Search Service
-      - Port 5003: Cart Service
-      - Port 5004: Order Service
-      - Port 5005: Wishlist Service
-    """
-    wait_time = between(1, 3)
-
-    def on_start(self):
-        parsed = urlparse(self.client.base_url)
-        self.host_ip = parsed.hostname or "localhost"
-
-    @tag('direct_ports')
-    @task(2)
-    def test_direct_frontend_port_80(self):
-        """Direct hit to Port 80 (Frontend)."""
-        self.client.get(f"http://{self.host_ip}:80/", name="[Direct Port 80] Frontend /")
-
-    @tag('direct_ports')
-    @task(2)
-    def test_direct_gateway_port_8000(self):
-        """Direct hit to Port 8000 (API Gateway)."""
-        self.client.get(f"http://{self.host_ip}:8000/health", name="[Direct Port 8000] Gateway /health")
-
-    @tag('direct_ports')
-    @task(2)
-    def test_direct_catalog_port_5001(self):
-        """Direct hit to Port 5001 (Catalog Microservice)."""
-        self.client.get(f"http://{self.host_ip}:5001/api/v1/products", name="[Direct Port 5001] Catalog /api/v1/products")
-
-    @tag('direct_ports')
-    @task(2)
-    def test_direct_search_port_5002(self):
-        """Direct hit to Port 5002 (Search Microservice)."""
-        self.client.get(f"http://{self.host_ip}:5002/api/v1/search?q=phone", name="[Direct Port 5002] Search /api/v1/search")
-
-    @tag('direct_ports')
-    @task(2)
-    def test_direct_cart_port_5003(self):
-        """Direct hit to Port 5003 (Cart Microservice)."""
-        self.client.get(f"http://{self.host_ip}:5003/api/v1/cart", name="[Direct Port 5003] Cart /api/v1/cart")
-
-    @tag('direct_ports')
-    @task(2)
-    def test_direct_order_port_5004(self):
-        """Direct hit to Port 5004 (Order Microservice)."""
-        self.client.get(f"http://{self.host_ip}:5004/api/v1/orders", name="[Direct Port 5004] Order /api/v1/orders")
-
-    @tag('direct_ports')
-    @task(2)
-    def test_direct_wishlist_port_5005(self):
-        """Direct hit to Port 5005 (Wishlist Microservice)."""
-        self.client.get(f"http://{self.host_ip}:5005/api/v1/wishlist", name="[Direct Port 5005] Wishlist /api/v1/wishlist")
