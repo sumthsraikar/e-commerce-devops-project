@@ -16,8 +16,9 @@ spec:
                 name: gateway-api
                 port:
                   number: 8000
-          - path: /
-            pathType: Prefix
+          - path: /(.*)
+
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: frontend
