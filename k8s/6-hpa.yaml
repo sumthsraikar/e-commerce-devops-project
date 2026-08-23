@@ -90,7 +90,7 @@ spec:
     kind: Deployment
     name: search-service
   minReplicas: 1
-  maxReplicas: 3
+  maxReplicas: 4
   metrics:
     - type: Resource
       resource:
