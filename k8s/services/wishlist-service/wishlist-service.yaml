@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: wishlist-service
-          image: sumithsraikar/e-commerce-devops-project:wishlist-service-82b42d173b76a14d760274ae0ade44b94841530c
+          image: sumithsraikar/e-commerce-devops-project:wishlist-service-f36529f9703b29ce59c8b7236f7925e23ad03916
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5005
