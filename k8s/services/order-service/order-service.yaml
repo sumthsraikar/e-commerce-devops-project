@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: sumithsraikar/e-commerce-devops-project:order-service-v1
+          image: sumithsraikar/e-commerce-devops-project:order-service-3f2322097b5adb78797ec2e115dba2278aef0456
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5004

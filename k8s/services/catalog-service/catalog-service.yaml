@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: catalog-service
-          image: sumithsraikar/e-commerce-devops-project:catalog-service-v1
+          image: sumithsraikar/e-commerce-devops-project:catalog-service-3f2322097b5adb78797ec2e115dba2278aef0456
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5001

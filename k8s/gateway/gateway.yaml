@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: gateway-api
-          image: sumithsraikar/e-commerce-devops-project:api-gateway-v1
+          image: sumithsraikar/e-commerce-devops-project:api-gateway-3f2322097b5adb78797ec2e115dba2278aef0456
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
