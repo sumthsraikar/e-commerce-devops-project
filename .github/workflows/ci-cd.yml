@@ -1,0 +1,56 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Docker Images
+        run: |
+          REPO="${{ secrets.DOCKERHUB_USERNAME || 'sumithsraikar' }}/e-commerce-devops-project"
+          TAG="${{ github.sha }}"
+
+          echo "Building and pushing images for commit: $TAG"
+
+          # 1. Frontend & Gateway
+          docker build -t $REPO:frontend-storefront-$TAG -t $REPO:frontend-storefront-latest .
+          docker build -t $REPO:api-gateway-$TAG -t $REPO:api-gateway-latest ./gateway
+
+          # 2. Automatically build all microservices in ./services/
+          for dir in services/*/; do
+            service=$(basename "$dir")
+            echo "Building and tagging $service..."
+            docker build -t "$REPO:$service-$TAG" -t "$REPO:$service-latest" "$dir"
+          done
+
+          # Push all built tags to Docker Hub
+          docker push $REPO --all-tags
+
+      - name: Update K8s Manifests & Push to Git
+        run: |
+          TAG="${{ github.sha }}"
+
+          # Automatically update image tags across all k8s files
+          find k8s/ -type f -name "*.yaml" -exec sed -i -E "s/(sumithsraikar\/e-commerce-devops-project:[a-zA-Z0-9_-]+)-[a-zA-Z0-9_\.-]+/\1-$TAG/g" {} +
+
+          # Commit and push changes back to GitHub
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/
+          git commit -m "chore(gitops): update image tags to $TAG [skip ci]" || exit 0
+          git push

@@ -4,7 +4,6 @@ metadata:
   name: order-service
   namespace: prod
 spec:
-  
   selector:
     matchLabels:
       app: order-service
@@ -26,6 +25,18 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5004
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5004
+            initialDelaySeconds: 15
+            periodSeconds: 20
 
 ---
 apiVersion: v1
